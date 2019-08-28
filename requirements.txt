@@ -3,4 +3,4 @@ Pillow
 huey
 redis
 kafka-python
-logging
+requests
