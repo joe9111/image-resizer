@@ -1,0 +1,6 @@
+Flask
+Pillow
+huey
+redis
+kafka-python
+logging
