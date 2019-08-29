@@ -4,3 +4,4 @@ huey
 redis
 kafka-python
 requests
+pytest

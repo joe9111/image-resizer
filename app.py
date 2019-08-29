@@ -1,29 +1,46 @@
-from flask import Flask, make_response, jsonify, request, send_file
+from flask import Flask, make_response, jsonify, request, send_file, send_from_directory
 from PIL import Image
 from io import BytesIO
 import requests
 import logging
 import os
 import uuid
+import concurrent.futures
 
 logger = logging.getLogger('ftpuploader')
 app = Flask(__name__)
 
 
+def handle_exception_and_get_response(message, exception):
+    logger.warning(message + ' \nException: \n' + str(exception))
+    return message
+
+
 @app.route('/images/api/v1/resize', methods=['POST'])
-def index():
-    urls = request.get_json()['urls']
-    logger.warning('URLs are '+str(urls))
+def post_resize_request():
+    try:
+        urls = request.get_json()['urls']
+    except Exception as e:
+        return handle_exception_and_get_response('The given json input is incorrect!', e)
     output_urls = []
-    for url in urls:
-        output_urls.append(handle_image_url(url))
-    output_dictionary = {'compressed_images': output_urls}
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for file_name in executor.map(compress_and_get_output_filename, urls):
+            output_urls.append(
+                request.url_root + 'images/api/v1/get/' + file_name)
+    output_dictionary = {'resized_images': output_urls}
     return jsonify(output_dictionary)
 
 
-def handle_image_url(image_url):
+@app.route('/images/api/v1/get/<path:file_name>', methods=['GET'])
+def get_image(file_name):
+    return send_from_directory('./static', file_name)
+
+
+def compress_and_get_output_filename(image_url):
+    # move to mvc architecture:separate controller and service
     # some code comments
-    # what happens if image is less than 100*100
+    # benchmark performance of kafka vs multithreading etc
+    # what happens if image is less than 100*100: orginal is returned
     # if the user is manually looking at the image, he knows it is the same one; if machine is looking at it, ordering is same
         # but still some special case may require mapping of old to new
 
@@ -31,29 +48,31 @@ def handle_image_url(image_url):
     # cache if same URL is given repeatedly
     # an option: store all output images and give the user URLs to view them
     # for production app as well, it would be better to host all images in S3
-    # if they build up, then they need to be cleaned
+    # if they build up, then they need to be cleaned(reason in terms of image size)
     # random url generator for output img: could improve security if all are public
     # if output size is variable , like for github, original images need to be stored else the compressed ones will do
-
-    # search thread pool in python and kafka python client
+    # auth so one user cannot see another
+    # maybe login service
+    # an option for user/client to abort request
+    # understand docker compose
     try:
         response = requests.get(image_url)
     except Exception as e:
-        logger.warning('Could not open given url! \nException: \n' + str(e))
-        return 'Could not open given url! '
+        return handle_exception_and_get_response('Could not open given url! ', e)
+
     size = 100, 100
     try:
         img = Image.open(BytesIO(response.content))
     except Exception as e:
-        logger.warning(
-            'The given url does not point to an image! \nException: \n' + str(e))
-        return 'The given url does not point to an image!'
+        return handle_exception_and_get_response('The given url does not point to an image!', e)
     img.thumbnail(size, Image.ANTIALIAS)
+    image_directory_name = 'static'
     # succeeds even if directory exists.
-    os.makedirs("./tmp", exist_ok=True)
+    os.makedirs(image_directory_name, exist_ok=True)
     unique_filename = str(uuid.uuid4())
-    img.save('./tmp/{unique_filename}.png'.format(**locals()), format='png')
-    return './tmp/{unique_filename}.png'.format(**locals())
+    img.save(
+        './{image_directory_name}/{unique_filename}.png'.format(**locals()), format='png')
+    return '{unique_filename}.png'.format(**locals())
 
 
 def serve_pil_image(pil_img):
@@ -64,7 +83,7 @@ def serve_pil_image(pil_img):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
 
 
 @app.errorhandler(404)
