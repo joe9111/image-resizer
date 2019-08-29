@@ -37,6 +37,7 @@ def get_image(file_name):
 
 
 def compress_and_get_output_filename(image_url):
+    # https://stackoverflow.com/questions/41454049/finding-the-cause-of-a-brokenprocesspool-in-pythons-concurrent-futures
     # move to mvc architecture:separate controller and service
     # some code comments
     # benchmark performance of kafka vs multithreading etc
