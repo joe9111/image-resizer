@@ -1,5 +1,6 @@
-from flask import Flask, make_response, jsonify, request, send_file, send_from_directory
+from flask import Flask, make_response, jsonify, request, send_file, send_from_directory, abort
 from PIL import Image
+from kafka import KafkaProducer
 from io import BytesIO
 import requests
 import logging
@@ -9,6 +10,11 @@ import concurrent.futures
 
 logger = logging.getLogger('ftpuploader')
 app = Flask(__name__)
+# connect to Kafka
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092', api_version=(0, 10, 0))
+# Assign a topic
+topic = 'my-topic'
 
 
 def handle_exception_and_get_response(message, exception):
@@ -18,15 +24,27 @@ def handle_exception_and_get_response(message, exception):
 
 @app.route('/images/api/v1/resize', methods=['POST'])
 def post_resize_request():
+    """Handle post request from the API and return a json response
+    """
     try:
         urls = request.get_json()['urls']
     except Exception as e:
         return handle_exception_and_get_response('The given json input is incorrect!', e)
+    logger.warning('Sending to kafka!')
+    producer.send(topic, urls.tobytes())
+    logger.warning('Message sent to kafka!')
+    return process_urls(urls)
+
+
+def process_urls(urls):
     output_urls = []
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for file_name in executor.map(compress_and_get_output_filename, urls):
-            output_urls.append(
-                request.url_root + 'images/api/v1/get/' + file_name)
+        for file_name_or_error_string in executor.map(compress_and_get_output_filename, urls):
+            if ".png" in file_name_or_error_string:
+                output_urls.append(
+                    request.url_root + 'images/api/v1/get/' + file_name_or_error_string)
+            else:
+                output_urls.append(file_name_or_error_string)
     output_dictionary = {'resized_images': output_urls}
     return jsonify(output_dictionary)
 
@@ -35,8 +53,13 @@ def post_resize_request():
 def get_image(file_name):
     return send_from_directory('./static', file_name)
 
+# why is this not covered while testing
+
 
 def compress_and_get_output_filename(image_url):
+    # what if only 1 url is wrong: give proper
+    # test with multiple clients
+    # load testing
     # https://stackoverflow.com/questions/41454049/finding-the-cause-of-a-brokenprocesspool-in-pythons-concurrent-futures
     # move to mvc architecture:separate controller and service
     # some code comments
@@ -74,13 +97,6 @@ def compress_and_get_output_filename(image_url):
     img.save(
         './{image_directory_name}/{unique_filename}.png'.format(**locals()), format='png')
     return '{unique_filename}.png'.format(**locals())
-
-
-def serve_pil_image(pil_img):
-    img_io = BytesIO()
-    pil_img.save(img_io, 'JPEG', quality=70)
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/jpeg', as_attachment=True, attachment_filename='file.png')
 
 
 if __name__ == '__main__':
