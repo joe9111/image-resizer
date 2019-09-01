@@ -1,9 +1,22 @@
 version: "3"
 services:
+  # The following service may be used for a db instance:
+  # db:
+  #   image: postgres:latest
+  #   restart: always
+  #   ports:
+  #     - 5432:5432
+  #   environment:
+  #     POSTGRES_PASSWORD: 'postgres'
+  #   volumes:
+  #     - database_data:/var/lib/postgresql/data
   web:
-    build: .
+    build: 
+      context: ./
+      dockerfile: ./kafka_producer/Dockerfile
     depends_on:
       - "kafka"
+      - "zookeeper"
     ports:
       - "5000:5000"
     volumes:
@@ -11,7 +24,20 @@ services:
       - logvolume01:/var/log
     environment:
       FLASK_ENV: development
-
+  consumer:
+    build: 
+      context: ./
+      dockerfile: ./kafka_consumer/Dockerfile
+    depends_on:
+      - "kafka"
+      - "zookeeper"
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/code
+      - logvolume01:/var/log
+    environment:
+      FLASK_ENV: development
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     environment:
@@ -23,14 +49,14 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - 9092:9092
+      - 29092:29092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 volumes:
   logvolume01: {}
-# https://stackoverflow.com/questions/52438822/docker-kafka-w-python-consumer
+  database_data: {}
