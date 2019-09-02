@@ -10,5 +10,5 @@ RUN apk --update add \
     zlib-dev
 RUN pip install -r requirements.txt
 COPY . .
-# CMD ["flask", "run"]
-CMD ["python3", "kafka_producer/app.py"]
+CMD ["flask", "run", "--host", "0.0.0.0"]
+# CMD ["python3", "kafka_producer/app.py"]
