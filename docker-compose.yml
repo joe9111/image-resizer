@@ -11,12 +11,16 @@ services:
   #   volumes:
   #     - database_data:/var/lib/postgresql/data
   web:
-    build: 
+    build:
       context: ./
       dockerfile: ./kafka_producer/Dockerfile
+      # context: C:/HUE/Workspace\personal\image-resizer/
+      # dockerfile: C:/HUE/Workspace/personal/image-resizer/kafka_producer/Dockerfile
     depends_on:
       - "kafka"
       - "zookeeper"
+    expose:
+      - "5000"
     ports:
       - "5000:5000"
     volumes:
@@ -25,9 +29,11 @@ services:
     environment:
       FLASK_ENV: development
   consumer:
-    build: 
+    build:
       context: ./
       dockerfile: ./kafka_consumer/Dockerfile
+      # context: C:/HUE/Workspace\personal\image-resizer/
+      # dockerfile: C:/HUE/Workspace/personal/image-resizer/kafka_consumer/Dockerfile
     depends_on:
       - "kafka"
       - "zookeeper"
@@ -56,6 +62,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG4J_ROOT_LOGLEVEL: ERROR
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 volumes:
   logvolume01: {}
