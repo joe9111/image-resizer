@@ -12,8 +12,7 @@ import uuid
 import concurrent.futures
 import json
 import psycopg2
-
-# logging.basicConfig(level=logging.DEBUG)
+import io
 
 logger = logging.getLogger('ftpuploader')
 
@@ -22,6 +21,7 @@ logger = logging.getLogger('ftpuploader')
 # Instead of db, store request ids and responses as a dict for now
 # The consumer service will write to this dict after processing
 request_map = {}
+image_map = {}
 app = Flask(__name__)
 
 # connect to Kafka
@@ -43,6 +43,7 @@ def store_processed_images():
     # This can be replaced by an "Insert in DB" step
     logger.warning(processed_images)
     request_map[processed_images['request_id']] = processed_images['result']
+    image_map.update(processed_images['image_map'])
     return 'Success!'
 
 
@@ -67,7 +68,10 @@ def post_resize_request():
 
 @app.route('/images/api/v1/get-image/<path:file_name>', methods=['GET'])
 def get_image(file_name):
-    return send_from_directory('./static', file_name)
+    # return send_from_directory('./static', file_name)
+    return send_file(
+        io.BytesIO(file_name),
+        mimetype='image/jpeg')
 
 
 @app.route('/images/api/v1/get-request/<string:request_id>', methods=['GET'])
