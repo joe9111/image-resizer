@@ -1,10 +1,12 @@
 import flask
 import os
 import tempfile
-import app
-# import pytest
+from kafka_producer import app
 import json
 from flask import request
+from unittest.mock import patch
+
+SEND_RESIZING_REQUEST_API_URI = '/images/api/v1/send-resizing-request'
 
 
 def test_unknown_path():
@@ -15,24 +17,21 @@ def test_unknown_path():
 
 def test_get_method():
     with app.app.test_client() as c:
-        response = c.get('/images/api/v1/resize')
+        response = c.get(SEND_RESIZING_REQUEST_API_URI)
         # Because GET method is not supported
         assert response.status_code == 405
 
 
-def test_post_method():
+@patch('kafka_producer.app.producer.send')
+def test_post_method(send_mock):
     with app.app.test_client() as c:
         with open('test_input.json') as file:
             json_data = json.load(file)
-            response = c.post('/images/api/v1/resize', json=json_data)
+        response = c.post(SEND_RESIZING_REQUEST_API_URI, json=json_data)
         assert response.status_code == 200
-        assert len(response.get_json()['resized_images']) == len(
-            json_data['urls'])
-        get_image_response = c.get(response.get_json()['resized_images'][0])
-        assert get_image_response.status_code == 200
 
 
 def test_post_method_with_empty_json():
     with app.app.test_client() as c:
-        response = c.post('/images/api/v1/resize', json='{}')
+        response = c.post(SEND_RESIZING_REQUEST_API_URI, json='{}')
         assert response.status_code == 200
