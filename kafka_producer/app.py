@@ -48,7 +48,9 @@ def store_processed_images():
     image_map.update(processed_images['image_map'])
     return 'Success!'
 
-
+#read all the images;store them in db;poll from db when processing kafka msg
+#read all the images;send them to kafka as bytes;kafka converts to PIL image and returns as it is returning now
+#(process_urls will not be needed, but each kafka msg will require more decoding etc, also,bad performance in sending them to kafka)
 @app.route('/images/api/v1/send-resizing-request', methods=['POST'])
 def post_resize_request():
     """Handle post request from the main client API and return the request_id using which the client can access the 
