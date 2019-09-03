@@ -9,6 +9,7 @@ import requests
 import logging
 import os
 import uuid
+import base64
 import concurrent.futures
 import json
 import psycopg2
@@ -40,8 +41,10 @@ def store_processed_images():
     response received after processing
     """
     processed_images = request.get_json()
-    # This can be replaced by an "Insert in DB" step
     logger.warning(processed_images)
+    # This can be replaced by an "Insert in DB" step
+    logger.warning('Received result for request: ' +
+                   processed_images['request_id'])
     request_map[processed_images['request_id']] = processed_images['result']
     image_map.update(processed_images['image_map'])
     return 'Success!'
@@ -52,7 +55,6 @@ def post_resize_request():
     """Handle post request from the main client API and return the request_id using which the client can access the 
     result later
     """
-    logger.warning('listening!')
     try:
         kafka_message = request.get_json()
     except Exception as e:
@@ -61,7 +63,8 @@ def post_resize_request():
     kafka_message['url_root'] = request.url_root
     logger.info('Sending to kafka!')
     producer.send(topic, key=request_id, value=kafka_message)
-    logger.info('Message sent to kafka!')
+    producer.flush()
+    logger.warning('Message sent to kafka!')
     request_map[request_id] = 'Your request is being processed'
     return {'request': request.url_root + 'images/api/v1/get-request/' + request_id}
 
@@ -69,9 +72,11 @@ def post_resize_request():
 @app.route('/images/api/v1/get-image/<path:file_name>', methods=['GET'])
 def get_image(file_name):
     # return send_from_directory('./static', file_name)
-    return send_file(
-        io.BytesIO(file_name),
-        mimetype='image/jpeg')
+    if file_name in image_map:
+        return send_file(
+            BytesIO(base64.b64decode(image_map[file_name])),
+            mimetype='image/png')
+    return 'Image not found, please try again...'
 
 
 @app.route('/images/api/v1/get-request/<string:request_id>', methods=['GET'])
@@ -106,7 +111,7 @@ def get_request(request_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True)
+    app.run(host='0.0.0.0', debug=True)
 
 
 @app.errorhandler(404)
