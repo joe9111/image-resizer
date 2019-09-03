@@ -7,7 +7,7 @@ This project provides a REST API that can be used to resize images.
 Note: On Windows, this application runs with docker-compose version 1.23.2.
 
 1. To start the service, just type `docker-compose up` in the root directory.
-2. Go to Postman, select POST, and enter <http://127.0.0.1:5000/images/api/v1/send-resizing-request> as the URL.
+2. Go to Postman (or make a curl request), select POST, and enter <http://127.0.0.1:5000/images/api/v1/send-resizing-request> as the URL.
 3. Enter the JSON payload on the `Body` tab. The `key` in the payload is "urls" and the `value` is a list of URLs pointing to the images to be resized. Here is an example of what the JSON payload should look like:
 
     ```json
