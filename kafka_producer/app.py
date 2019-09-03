@@ -1,5 +1,5 @@
-"""This module listens to and serves all requests from the client.
-It also acts as a producer of kafka messages.
+"""
+This module listens to and serves all requests from the client. It also acts as a producer of kafka messages.
 """
 from flask import Flask, make_response, jsonify, request, send_file, send_from_directory, abort
 from PIL import Image
@@ -12,7 +12,6 @@ import uuid
 import base64
 import concurrent.futures
 import json
-import psycopg2
 import io
 
 logger = logging.getLogger('ftpuploader')
@@ -50,7 +49,7 @@ def store_processed_images():
     return 'Success!'
 
 
-@app.route('/images/api/v1/send-request', methods=['POST'])
+@app.route('/images/api/v1/send-resizing-request', methods=['POST'])
 def post_resize_request():
     """Handle post request from the main client API and return the request_id using which the client can access the 
     result later
@@ -58,23 +57,24 @@ def post_resize_request():
     try:
         kafka_message = request.get_json()
     except Exception as e:
-        return ('The given json input is incorrect!')
+        return 'The given json input is incorrect!'
+    if kafka_message == '{}':
+        return 'The given json input is empty!'
     request_id = str(uuid.uuid4())
     kafka_message['url_root'] = request.url_root
     logger.info('Sending to kafka!')
     producer.send(topic, key=request_id, value=kafka_message)
     producer.flush()
-    logger.warning('Message sent to kafka!')
+    logger.info('Message sent to kafka!')
     request_map[request_id] = 'Your request is being processed'
     return {'request': request.url_root + 'images/api/v1/get-request/' + request_id}
 
 
-@app.route('/images/api/v1/get-image/<path:file_name>', methods=['GET'])
-def get_image(file_name):
-    # return send_from_directory('./static', file_name)
-    if file_name in image_map:
+@app.route('/images/api/v1/get-image/<string:image_id>', methods=['GET'])
+def get_image(image_id):
+    if image_id in image_map:
         return send_file(
-            BytesIO(base64.b64decode(image_map[file_name])),
+            BytesIO(base64.b64decode(image_map[image_id])),
             mimetype='image/png')
     return 'Image not found, please try again...'
 

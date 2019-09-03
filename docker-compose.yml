@@ -14,8 +14,6 @@ services:
     build:
       context: ./
       dockerfile: ./kafka_producer/Dockerfile
-      # context: C:/HUE/Workspace\personal\image-resizer/
-      # dockerfile: C:/HUE/Workspace/personal/image-resizer/kafka_producer/Dockerfile
     depends_on:
       - "kafka"
       - "zookeeper"
@@ -32,8 +30,6 @@ services:
     build:
       context: ./
       dockerfile: ./kafka_consumer/Dockerfile
-      # context: C:/HUE/Workspace\personal\image-resizer/
-      # dockerfile: C:/HUE/Workspace/personal/image-resizer/kafka_consumer/Dockerfile
     depends_on:
       - "kafka"
       - "zookeeper"
