@@ -1,0 +1,12 @@
+{
+    "result": {
+        "resized_images": [
+            "http: //127.0.0.1:5000/images/api/v1/get-image/946dcce8-aa64-4f1d-9d57-e2e5ea56d615",
+            "http://127.0.0.1:5000/images/api/v1/get-image/8b6bdd04-c59a-42ad-b777-cf530a44eb30"
+        ]
+    },
+    "request_id": "fcc7404b-b6cd-4d75-85a6-b1494128400f",
+    "image_map": {
+        "request_id": "dummy_image"
+    }
+}

@@ -1,0 +1,15 @@
+version: "3"
+services:
+  test:
+    build:
+      context: ../
+      dockerfile: ./test/Dockerfile
+    ports:
+      - "5005:5005"
+    volumes:
+      - .:/code
+      - logvolume01:/var/log
+    environment:
+      FLASK_ENV: development
+volumes:
+  logvolume01: {}
