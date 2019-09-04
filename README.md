@@ -19,8 +19,29 @@ Note: On Windows, this application runs with docker-compose version 1.23.2.
     }
     ```
 
-4. 
+Currently, input can only be provided as such links pointing to the images.
+4. Once you make this request, you will recieve an output as follows:
 
+```json
+{
+"request": "http://127.0.0.1:5000/images/api/v1/get-request/fcc7404b-b6cd-4d75-85a6-b1494128400f"
+}
+```
+
+This means that the request was successful and it has been added to the Kafka queue for processing.
+5. Make a GET request to the URL returned in the previous step: <http://127.0.0.1:5000/images/api/v1/get-request/fcc7404b-b6cd-4d75-85a6-b1494128400f>
+6. You will get a JSON response containing the links to the resized images as follows:
+
+```json
+{
+  "resized_images": [
+    "http://127.0.0.1:5000/images/api/v1/get-image/c23078ba-0b72-4ee0-9c76-be4ed055fe96",
+    "http://127.0.0.1:5000/images/api/v1/get-image/0b6afda9-9ede-4755-b955-13e09b6bbd54"
+  ]
+}
+```
+
+7. Make a GET request to any of the links returned in the previous step to get the resized image.
 
 ## Architecture
 
@@ -41,12 +62,16 @@ These are the services started by `docker-compose`:
 
 - kafka: This acts as the kafka broker, which is basically a middleman between the kafka producer and consumer. For this service, port 9092 is exposed for use by the internal docker network.
 
-- zookeeper: This is used by the kafka service. It is required to track status of various kafka nodes. 
-
+- zookeeper: This is used by the kafka service. It is required to track status of various kafka nodes and coordinate between them.
 
 ## Improvements/ Scope of Future Work
 
 ### Minor improvements which could add more functionality and enhance user experience
 
 - Provide functionality to provide images as either URLs or from the filesystem.
- <!-- search "send image to rest api" -->
+- Currently, everything is being stored in memory. A DB instance should be used to store the images and the requests.
+
+### Testing
+
+- Currently, only basic unit tests have been written. More tests to cover corner cases and increase code coverage could be written.
+- Testing could also be done by creating a script to run the application and then make API calls to it and verify the results.
