@@ -6,12 +6,7 @@ from flask import request
 from unittest.mock import patch
 import importlib.util
 import sys
-
-sys.path.append('../kafka_producer/')
-sys.path.append('/kafka_producer/')
-
-# from kafka_producer import app
-import app
+from kafka_producer import app
 
 SEND_RESIZING_REQUEST_API_URI = '/images/api/v1/send-resizing-request'
 SEND_IMAGES_API = '/images/api/v1/send-images'
