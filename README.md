@@ -6,7 +6,7 @@ Created by: Ojasvi Monga (ojasvimonga95@gmail.com)
 
 ## Usage
 
-Note: On Windows, this application runs with docker-compose version 1.23.2.
+**Note**: On Windows, this application runs with docker-compose version 1.23.2.
 
 1. To start the service, just type `docker-compose up` in the root directory.
 2. Go to Postman (or make a curl request), select POST, and enter <http://127.0.0.1:5000/images/api/v1/send-resizing-request> as the URL.
@@ -58,20 +58,20 @@ Mutiple images can be submitted for resizing in a single request.
 
 These are the services started by `docker-compose`:
 
-- web: This is the main microservice that the client interacts with. The available end-points are:
+- **web**: This is the main microservice that the client interacts with. The available end-points are:
 
-  - POST /images/api/v1/send-images: Not meant to be used by the client. This is used by the kafka consumer microservice to send back processed images to the client facing microservice.
-  - POST /images/api/v1/send-resizing-request: Sends the given JSON payload, containing links to multiple images, for resizing.
-  - GET /images/api/v1/get-request/<string:request_id>: Gets the resized images for the specified request.
-  - GET /images/api/v1/get-image/<string:image_id>: Gets the specified image after resizing.
+  - **POST** /images/api/v1/send-images: Not meant to be used by the client. This is used by the kafka consumer microservice to send back processed images to the client facing microservice.
+  - **POST** /images/api/v1/send-resizing-request: Sends the given JSON payload, containing links to multiple images, for resizing.
+  - **GET** /images/api/v1/get-request/<string:request_id>: Gets the resized images for the specified request.
+  - **GET** /images/api/v1/get-image/<string:image_id>: Gets the specified image after resizing.
 
-- consumer: 
+- **consumer**: 
   - This microservice runs kafka consumer in the background. It polls messages from kafka, resizes the images and sends them back to the `web` microservice over HTTP.
   - Each of the images is processed separately. So, even if some of the given URLs cannot be resolved, are malformed or do not point to an image, the entire request is not affected, which is important for a production application.
 
-- kafka: This acts as the kafka broker, which is basically a middleman between the kafka producer and consumer. For this service, port 9092 is exposed for use by the internal docker network.
+- **kafka**: This acts as the kafka broker, which is basically a middleman between the kafka producer and consumer. For this service, port 9092 is exposed for use by the internal docker network.
 
-- zookeeper: This is used by the kafka service. It is required to track status of various kafka nodes and coordinate between them.
+- **zookeeper**: This is used by the kafka service. It is required to track status of various kafka nodes and coordinate between them.
 
 ## Improvements/ Scope of Future Work
 
