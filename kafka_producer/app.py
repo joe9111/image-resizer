@@ -31,7 +31,7 @@ producer = KafkaProducer(
     key_serializer=lambda msg: json.dumps(msg).encode('utf-8'))
 
 # Assign a topic
-topic = 'my-topic'
+topic = 'images'
 
 
 @app.route('/images/api/v1/send-images', methods=['POST'])
@@ -40,12 +40,12 @@ def store_processed_images():
     response received after processing
     """
     processed_images = request.get_json()
-    logger.warning(processed_images)
     logger.info('Received result for request: ' +
-                   processed_images['request_id'])
+                processed_images['request_id'])
     request_map[processed_images['request_id']] = processed_images['result']
     image_map.update(processed_images['image_map'])
     return 'Success!'
+
 
 @app.route('/images/api/v1/send-resizing-request', methods=['POST'])
 def post_resize_request():
@@ -70,10 +70,12 @@ def post_resize_request():
 
 @app.route('/images/api/v1/get-image/<string:image_id>', methods=['GET'])
 def get_image(image_id):
+    """Handle request to get an image by id
+    """
     if image_id in image_map:
-        return send_file(
-            BytesIO(base64.b64decode(image_map[image_id])),
-            mimetype='image/png')
+            return send_file(
+                BytesIO(base64.b64decode(image_map[image_id])),
+                mimetype='image/png')
     return 'Image not found, please try again...'
 
 
@@ -85,27 +87,6 @@ def get_request(request_id):
     if request_id in request_map:
         return request_map[request_id]
     return 'Request not found, please try again...'
-    # what if only 1 url is wrong: give proper
-    # test with multiple clients
-    # load testing
-    # https://stackoverflow.com/questions/41454049/finding-the-cause-of-a-brokenprocesspool-in-pythons-concurrent-futures
-    # move to mvc architecture:separate controller and service
-    # some code comments
-    # benchmark performance of kafka vs multithreading etc
-    # what happens if image is less than 100*100: orginal is returned
-    # if the user is manually looking at the image, he knows it is the same one; if machine is looking at it, ordering is same
-    # but still some special case may require mapping of old to new
-
-    # short and friendly output urls
-    # cache if same URL is given repeatedly
-    # an option: store all output images and give the user URLs to view them
-    # for production app as well, it would be better to host all images in S3
-    # if they build up, then they need to be cleaned(reason in terms of image size)
-    # random url generator for output img: could improve security if all are public
-    # if output size is variable , like for github, original images need to be stored else the compressed ones will do
-    # auth so one user cannot see another
-    # maybe login service
-    # an option for user/client to abort request
 
 
 if __name__ == '__main__':

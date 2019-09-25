@@ -21,7 +21,7 @@ image_map = {}
 INVALID_URL_MESSAGE = 'The given url is invalid! '
 # connect to Kafka server and pass the topic we want to consume
 consumer = KafkaConsumer(
-    'my-topic', bootstrap_servers='kafka:9092',
+    'images', bootstrap_servers='kafka:9092',
     api_version=(0, 10, 0),
     value_deserializer=lambda msg: json.loads(msg.decode('utf-8')),
     auto_offset_reset='earliest',
@@ -34,7 +34,7 @@ def handle_exception_and_get_response(message, exception):
     return message
 
 
-def compress_and_get_output_file(image_url):
+def compress_and_get_output_file_name(image_url):
     try:
         response = requests.get(image_url)
     except Exception as e:
@@ -58,7 +58,7 @@ def compress_and_get_output_file(image_url):
 def process_urls(urls, url_root):
     output_urls = []
     for url in urls:
-        file_name_or_error_string = compress_and_get_output_file(url)
+        file_name_or_error_string = compress_and_get_output_file_name(url)
         if file_name_or_error_string == INVALID_URL_MESSAGE:
             output_urls.append(file_name_or_error_string)
         else:
